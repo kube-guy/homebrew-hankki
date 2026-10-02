@@ -62,6 +62,19 @@ npm start
 
 설치본은 미리 빌드된 정적 파일과 Node 서버를 사용하므로 `npm install`이 필요하지 않습니다. 서버는 `127.0.0.1`에만 바인딩하며 허용되지 않은 Host 헤더를 거부합니다.
 
+### Homebrew 배포
+
+`Formula/hankki.rb`가 설치 정의입니다. Node.js를 의존성으로 설치하고, 저장소의 `bin`과 미리 빌드된 `dist`를 사용합니다. 자동 실행 시에는 브라우저를 열지 않습니다.
+
+현재 Formula는 앱 버전 0.2.0의 커밋 아카이브와 SHA-256을 고정합니다. 다음 버전을 배포할 때는 먼저 테스트와 빌드를 완료하고 앱 코드를 공개한 뒤, Formula의 `url`, `version`, `sha256`을 해당 아카이브에 맞게 갱신하세요. `dist/sync.js`도 빌드 결과를 함께 커밋해야 합니다.
+
+Formula 변경을 검증하려면 변경 브랜치를 tap으로 연결한 환경에서 아래를 실행합니다.
+
+```sh
+brew install --build-from-source kube-guy/hankki/hankki
+brew test kube-guy/hankki/hankki
+```
+
 ## 아기 메뉴
 
 연령은 참고용입니다. 만 0세 메뉴는 이유식을 시작한 아이를 전제로 하며 발달·이미 먹어본 재료·음식 질감을 함께 확인해야 합니다. 레시피의 재료량은 1회 권장 섭취량이 아닙니다. 영양 처방이나 완전한 식단 구성 도구가 아닙니다.

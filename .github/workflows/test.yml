@@ -1,0 +1,32 @@
+name: Test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Verify committed bundle
+        run: git diff --exit-code -- dist/sync.js
+
+  homebrew:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tap from this checkout
+        run: brew tap kube-guy/hankki "$GITHUB_WORKSPACE"
+      - run: brew install --build-from-source kube-guy/hankki/hankki
+      - run: brew test kube-guy/hankki/hankki
