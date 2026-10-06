@@ -1,0 +1,9 @@
+.build/
+.build-*/
+build/
+.DS_Store
+*.secret
+# Supabase 연결 정보 — 키로 기본 지점·식당 목록을 읽을 수 있어 공개하지 않는다.
+config.local.json
+# 수집 자료·식당 목록은 지역이 드러나므로 저장소에 넣지 않는다. Supabase 가 원본이다.
+research/
