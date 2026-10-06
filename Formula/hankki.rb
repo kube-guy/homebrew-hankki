@@ -1,9 +1,9 @@
 class Hankki < Formula
   desc "Choose family meals from ingredients in your pantry"
   homepage "https://github.com/kube-guy/homebrew-hankki"
-  url "https://github.com/kube-guy/homebrew-hankki/archive/ec10636778c61e938d867716687c9d4bdec2a9c0.tar.gz"
+  url "https://github.com/kube-guy/homebrew-hankki/archive/5d6077d71d89a227b19a127e3690c4f63c1c7df6.tar.gz"
   version "0.2.0"
-  sha256 "4f33c16af30e5062a859e3c50b901b56028cab6168a8052440184acfb00a4829"
+  sha256 "61c35693522cc61270cb33d60a934864e231d0d28ff4b90782c2062041a71006"
 
   depends_on "node"
 
