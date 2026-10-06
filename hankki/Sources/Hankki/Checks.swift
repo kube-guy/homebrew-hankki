@@ -30,12 +30,12 @@ import Foundation
             return out.pantry == ["당근", "양파"] && out.staples == ["달걀"]
         }
         expect("quantities and exact ingredients do not overlap") {
-            Set(try PantryLanguage.parse("사과 2개와 오이 3개 추가해줘").map(\.ingredient)) == ["사과", "오이"]
-                && (try PantryLanguage.parse("참기름 추가해줘")) == [C(ingredient: "참기름", action: .add)]
+            try Set(PantryLanguage.parse("사과 2개와 오이 3개 추가해줘").map(\.ingredient)) == ["사과", "오이"]
+                && PantryLanguage.parse("참기름 추가해줘") == [C(ingredient: "참기름", action: .add)]
         }
         expect("staple removal moves back to today") {
             try run("달걀은 상시 재료에서 빼줘", staples: ["달걀"]).pantry == ["달걀"]
-                && (try run("달걀 다 먹었어", staples: ["달걀"]).staples).isEmpty
+                && run("달걀 다 먹었어", staples: ["달걀"]).staples.isEmpty
         }
         for text in ["우유 추가하지 마", "당근 빼지마", "우유가 있어?", "당근 있으면 넣어줘", "당근 추가하고 당근 삭제해줘", "양파 추가하고 우유는 나중에 살 거야"] {
             expect("refuses: \(text)") {
@@ -43,11 +43,11 @@ import Foundation
             }
         }
         expect("custom and persisted names") {
-            (try PantryLanguage.parse("콜라비 추가해줘")) == [C(ingredient: "콜라비", action: .add)]
-                && (try PantryLanguage.parse("루콜라는 항상 있어", known: ["루콜라"])) == [C(ingredient: "루콜라", action: .staple)]
+            try PantryLanguage.parse("콜라비 추가해줘") == [C(ingredient: "콜라비", action: .add)]
+                && PantryLanguage.parse("루콜라는 항상 있어", known: ["루콜라"]) == [C(ingredient: "루콜라", action: .staple)]
         }
         expect("plain names add") {
-            Set(try PantryLanguage.parse("두부, 시금치").map(\.ingredient)) == ["두부", "시금치"]
+            try Set(PantryLanguage.parse("두부, 시금치").map(\.ingredient)) == ["두부", "시금치"]
         }
 
         // 장보기 목록
