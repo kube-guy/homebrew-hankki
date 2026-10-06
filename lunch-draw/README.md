@@ -23,7 +23,7 @@ chmod 600 ~/.config/lunch-draw/config.json   # supabaseURL·supabaseKey 값을 �
 lunch-draw
 ```
 
-소스에서 빌드하므로 Xcode 16 이상(Swift 6)이 필요합니다. Supabase 연결 정보는 설치본에 들어 있지 않고,
+소스에서 빌드하므로 Swift 6 이상이 필요합니다 (Command Line Tools 로 충분합니다). Supabase 연결 정보는 설치본에 들어 있지 않고,
 `~/.config/lunch-draw/config.json` 에서 읽습니다.
 
 ## 개인정보를 저장소에 두지 않는다

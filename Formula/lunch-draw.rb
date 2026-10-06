@@ -5,7 +5,7 @@ class LunchDraw < Formula
   version "0.4.0"
   sha256 "dffc8f38ec64d6b88fc1aff4bc05567c85ad8e8db952db0d062d5f42e2f12b31"
 
-  depends_on xcode: ["16.0", :build]
+  # Command Line Tools 의 Swift 6 으로 빌드된다. Xcode 전체를 요구하지 않는다.
   depends_on arch: :arm64
   depends_on macos: :sonoma
 
