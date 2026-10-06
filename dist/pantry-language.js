@@ -70,5 +70,5 @@
     }
     return {pantry:[...pantry],staples:[...staples],changes};
   }
-  const api={parse,apply};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PantryLanguage=api;
+  const api={parse,apply,aliases};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.PantryLanguage=api;
 })(typeof window==='undefined'?globalThis:window);
