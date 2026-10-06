@@ -97,6 +97,13 @@ enum Checks {
             precondition(!restored.candidates.isEmpty && restored.candidates.allSatisfy { $0.distance(from: restored.origin!) <= Store.nearMeters })
             precondition(!restored.candidates.contains { $0.id == "w1" || $0.id == "a1" })
             restored.nearOnly = false
+            // 가격 필터: 상한 이하만 남긴다. 픽스처는 모두 12,000원.
+            restored.maxPrice = 10_000
+            precondition(restored.candidates.isEmpty)
+            restored.maxPrice = 15_000
+            precondition(restored.candidates.count == eligible.count)
+            restored.maxPrice = nil
+            precondition(ContentView.priceText(10_000) == "1만원" && ContentView.priceText(15_000) == "1만5천원")
             restored.state.selectedID = first.id
             precondition(restored.visibleSelected?.id == first.id)
             let differentTheme = CuisineTheme.allCases.first { theme in

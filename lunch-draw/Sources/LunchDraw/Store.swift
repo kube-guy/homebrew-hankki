@@ -30,6 +30,9 @@ enum AppConfig {
     /// 반경 설정과 별개로, 가까운 곳만 잠깐 보고 싶을 때 켜는 필터. 저장하지 않는다.
     @Published var nearOnly = false
     static let nearMeters: Double = 500
+    /// 대표 메뉴 가격 상한. nil 이면 기본 조건(3만원 미만)만 본다. 저장하지 않는다.
+    @Published var maxPrice: Int?
+    static let priceChoices = [10_000, 15_000, 20_000]
     @Published var search = ""
     let file: URL
     private var pendingSync: Task<Void, Never>?
@@ -57,6 +60,7 @@ enum AppConfig {
             (!favoritesOnly || state.favorites.contains($0.id)) &&
             (!newOnly || $0.isNew) &&
             (!nearOnly || $0.distance(from: origin) <= Self.nearMeters) &&
+            (maxPrice == nil || $0.price <= maxPrice!) &&
             (search.isEmpty || ($0.name + $0.menu + $0.category).localizedCaseInsensitiveContains(search))
         }.sorted { $0.distance(from: origin) < $1.distance(from: origin) }
     }

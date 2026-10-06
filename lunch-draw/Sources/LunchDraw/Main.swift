@@ -5,7 +5,7 @@ import MapKit
 @main struct LunchDrawApp: App {
     @StateObject private var store = Store()
     init() {
-        if CommandLine.arguments.contains("--version") { print("0.4.3"); exit(0) }
+        if CommandLine.arguments.contains("--version") { print("0.4.4"); exit(0) }
         if CommandLine.arguments.contains("--self-check") { Checks.run(); exit(0) }
         if CommandLine.arguments.contains("--cloud-check") {
             Task {
@@ -100,6 +100,7 @@ struct ContentView: View {
         .onChange(of: store.favoritesOnly) { _, _ in store.refreshRecommendationForFilter() }
         .onChange(of: store.newOnly) { _, _ in store.refreshRecommendationForFilter() }
         .onChange(of: store.nearOnly) { _, _ in store.refreshRecommendationForFilter() }
+        .onChange(of: store.maxPrice) { _, _ in store.refreshRecommendationForFilter() }
     }
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -124,6 +125,10 @@ struct ContentView: View {
             Divider()
             TextField("식당·메뉴 검색", text: $store.search).textFieldStyle(.roundedBorder)
             Picker("먹고 싶은 종류", selection: $store.category) { ForEach(store.categories, id: \.self) { Text($0) } }
+            Picker("가격", selection: $store.maxPrice) {
+                Text("전체 (3만원 미만)").tag(Int?.none)
+                ForEach(Store.priceChoices, id: \.self) { Text("\(Self.priceText($0)) 이하").tag(Int?.some($0)) }
+            }
             Toggle("즐겨찾기에서만 추천", isOn: $store.favoritesOnly)
             Toggle("새로오픈만 추천", isOn: $store.newOnly)
             Toggle("\(Self.radiusText(Store.nearMeters)) 이내만 추천", isOn: $store.nearOnly)
@@ -143,7 +148,7 @@ struct ContentView: View {
                 if store.busy { ProgressView().controlSize(.small) }
                 Text(store.status).font(.caption).foregroundStyle(.secondary)
             }
-            Text("Lunch Draw 0.4.3").font(.caption2).foregroundStyle(.tertiary)
+            Text("Lunch Draw 0.4.4").font(.caption2).foregroundStyle(.tertiary)
         }.padding(24).background(Color(nsColor: .controlBackgroundColor))
     }
     private var recommendation: some View {
@@ -220,6 +225,11 @@ struct ContentView: View {
             if !r.note.isEmpty { Text(r.note).font(.caption2).foregroundStyle(.secondary) }
             if let date = store.state.visits[r.id] { Text("최근 방문 \(date.formatted(date: .abbreviated, time: .omitted))").font(.caption).foregroundStyle(red) }
         }.padding(18).frame(maxWidth: .infinity, alignment: .leading).background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
+    }
+    /// 10000 → "1만원", 15000 → "1만5천원"
+    static func priceText(_ won: Int) -> String {
+        let man = won / 10_000, cheon = (won % 10_000) / 1_000
+        return cheon == 0 ? "\(man)만원" : "\(man)만\(cheon)천원"
     }
     static func radiusText(_ meters: Double) -> String {
         meters >= 1000 ? String(format: meters.truncatingRemainder(dividingBy: 1000) == 0 ? "%.0fkm" : "%.1fkm", meters / 1000) : "\(Int(meters))m"
