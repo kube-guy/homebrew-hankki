@@ -5,7 +5,7 @@ import MapKit
 @main struct LunchDrawApp: App {
     @StateObject private var store = Store()
     init() {
-        if CommandLine.arguments.contains("--version") { print("0.4.4"); exit(0) }
+        if CommandLine.arguments.contains("--version") { print("0.4.5"); exit(0) }
         if CommandLine.arguments.contains("--self-check") { Checks.run(); exit(0) }
         if CommandLine.arguments.contains("--cloud-check") {
             Task {
@@ -67,6 +67,9 @@ struct ContentView: View {
                     HStack {
                         Text("저장한 식당 \(store.candidates.count)곳").font(.title3.bold())
                         Spacer()
+                        Picker("정렬", selection: $store.sortOrder) {
+                            ForEach(Store.SortOrder.allCases, id: \.self) { Text($0.rawValue) }
+                        }.pickerStyle(.segmented).labelsHidden().fixedSize()
                         Button("목록 재설정", systemImage: "arrow.clockwise") { resetting = true }.disabled(store.busy)
                     }
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
@@ -148,7 +151,7 @@ struct ContentView: View {
                 if store.busy { ProgressView().controlSize(.small) }
                 Text(store.status).font(.caption).foregroundStyle(.secondary)
             }
-            Text("Lunch Draw 0.4.4").font(.caption2).foregroundStyle(.tertiary)
+            Text("Lunch Draw 0.4.5").font(.caption2).foregroundStyle(.tertiary)
         }.padding(24).background(Color(nsColor: .controlBackgroundColor))
     }
     private var recommendation: some View {

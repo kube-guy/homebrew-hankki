@@ -29,6 +29,18 @@ struct Restaurant: Codable, Identifiable, Equatable {
     func distance(from origin: Origin) -> Double { Geo.distance(from: origin, to: latitude, longitude) }
     /// 공개된 평점(네이버·구글)이 하나 이상 있고, 있는 평점은 모두 4.0 이상이어야 한다.
     /// 구글 평점이 아직 없는 신상도 네이버 평점이 4.0 이상이면 후보에 넣는다.
+    /// 공개된 네이버·구글 평점의 평균. 평점이 없으면 0.
+    var averageRating: Double {
+        let ratings = [naverRating, googleRating].compactMap { $0 }
+        return ratings.isEmpty ? 0 : ratings.reduce(0, +) / Double(ratings.count)
+    }
+    /// 평점순 정렬 점수. 리뷰가 적은 5.0 이 리뷰 수천 개인 4.9 를 앞서지 않도록,
+    /// 리뷰 50개어치의 전체 평균(4.3)을 섞는다 (베이즈 평균).
+    var ratingScore: Double {
+        let prior = 4.3, weight = 50.0, n = Double(reviewCount)
+        return averageRating == 0 ? 0 : (averageRating * n + prior * weight) / (n + weight)
+    }
+    var reviewCount: Int { (naverReviews ?? 0) + (googleReviews ?? 0) }
     var ratingsOK: Bool {
         let ratings = [naverRating, googleRating].compactMap { $0 }
         return !ratings.isEmpty && ratings.allSatisfy { $0 >= 4 }

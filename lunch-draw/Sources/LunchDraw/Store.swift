@@ -33,6 +33,11 @@ enum AppConfig {
     /// 대표 메뉴 가격 상한. nil 이면 기본 조건(3만원 미만)만 본다. 저장하지 않는다.
     @Published var maxPrice: Int?
     static let priceChoices = [10_000, 15_000, 20_000]
+    enum SortOrder: String, CaseIterable { case distance = "거리순", rating = "평점순" }
+    /// 목록 정렬. 랜덤 추천과는 상관없다. 이 Mac 에만 기억한다 (클라우드 상태에는 넣지 않음).
+    @Published var sortOrder: SortOrder = SortOrder(rawValue: UserDefaults.standard.string(forKey: "sortOrder") ?? "") ?? .distance {
+        didSet { UserDefaults.standard.set(sortOrder.rawValue, forKey: "sortOrder") }
+    }
     @Published var search = ""
     let file: URL
     private var pendingSync: Task<Void, Never>?
@@ -62,7 +67,16 @@ enum AppConfig {
             (!nearOnly || $0.distance(from: origin) <= Self.nearMeters) &&
             (maxPrice == nil || $0.price <= maxPrice!) &&
             (search.isEmpty || ($0.name + $0.menu + $0.category).localizedCaseInsensitiveContains(search))
-        }.sorted { $0.distance(from: origin) < $1.distance(from: origin) }
+        }.sorted { a, b in
+            switch sortOrder {
+            case .distance:
+                return a.distance(from: origin) < b.distance(from: origin)
+            case .rating:
+                // 리뷰 수를 반영한 평점, 같으면 가까운 곳
+                if a.ratingScore != b.ratingScore { return a.ratingScore > b.ratingScore }
+                return a.distance(from: origin) < b.distance(from: origin)
+            }
+        }
     }
     var categories: [String] { ["전체"] + CuisineTheme.allCases.map(\.rawValue) }
     /// 새로오픈인데 평점이나 가격이 아직 없어 추천에 못 들어간 곳.

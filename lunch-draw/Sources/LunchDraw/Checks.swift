@@ -103,6 +103,24 @@ enum Checks {
             restored.maxPrice = 15_000
             precondition(restored.candidates.count == eligible.count)
             restored.maxPrice = nil
+            // 정렬: 거리순은 가까운 순, 평점순은 평균 평점 높은 순.
+            let savedOrder = restored.sortOrder
+            restored.sortOrder = .distance
+            let byDistance = restored.candidates.map { $0.distance(from: restored.origin!) }
+            precondition(byDistance == byDistance.sorted())
+            let a1 = restored.state.restaurants.firstIndex { $0.id == "a1" }!
+            restored.state.restaurants[a1].naverRating = 4.9
+            restored.sortOrder = .rating
+            precondition(restored.candidates.first?.id == "a1")
+            // 리뷰가 적은 만점은 리뷰 많은 4.9 를 앞서지 않는다.
+            var fewReviews = fixtures[0]; fewReviews.naverRating = 5; fewReviews.googleRating = 5
+            fewReviews.naverReviews = 5; fewReviews.googleReviews = 0
+            var manyReviews = fixtures[0]; manyReviews.naverRating = 4.9; manyReviews.googleRating = 4.9
+            manyReviews.naverReviews = 3_000
+            precondition(manyReviews.ratingScore > fewReviews.ratingScore)
+            let scores = restored.candidates.map(\.ratingScore)
+            precondition(scores == scores.sorted(by: >))
+            restored.sortOrder = savedOrder
             precondition(ContentView.priceText(10_000) == "1만원" && ContentView.priceText(15_000) == "1만5천원")
             restored.state.selectedID = first.id
             precondition(restored.visibleSelected?.id == first.id)
