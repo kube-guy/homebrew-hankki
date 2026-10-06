@@ -92,6 +92,11 @@ enum Checks {
                 precondition(restored.candidates.allSatisfy { $0.theme == theme })
             }
             restored.category = "전체"
+            // 500m 필터: 기본 반경(1km) 안에서도 500m 넘는 곳은 뺀다.
+            restored.nearOnly = true
+            precondition(!restored.candidates.isEmpty && restored.candidates.allSatisfy { $0.distance(from: restored.origin!) <= Store.nearMeters })
+            precondition(!restored.candidates.contains { $0.id == "w1" || $0.id == "a1" })
+            restored.nearOnly = false
             restored.state.selectedID = first.id
             precondition(restored.visibleSelected?.id == first.id)
             let differentTheme = CuisineTheme.allCases.first { theme in

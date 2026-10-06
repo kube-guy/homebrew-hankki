@@ -5,7 +5,7 @@ import MapKit
 @main struct LunchDrawApp: App {
     @StateObject private var store = Store()
     init() {
-        if CommandLine.arguments.contains("--version") { print("0.4.2"); exit(0) }
+        if CommandLine.arguments.contains("--version") { print("0.4.3"); exit(0) }
         if CommandLine.arguments.contains("--self-check") { Checks.run(); exit(0) }
         if CommandLine.arguments.contains("--cloud-check") {
             Task {
@@ -99,6 +99,7 @@ struct ContentView: View {
         .onChange(of: store.category) { _, _ in store.refreshRecommendationForFilter() }
         .onChange(of: store.favoritesOnly) { _, _ in store.refreshRecommendationForFilter() }
         .onChange(of: store.newOnly) { _, _ in store.refreshRecommendationForFilter() }
+        .onChange(of: store.nearOnly) { _, _ in store.refreshRecommendationForFilter() }
     }
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -125,6 +126,7 @@ struct ContentView: View {
             Picker("먹고 싶은 종류", selection: $store.category) { ForEach(store.categories, id: \.self) { Text($0) } }
             Toggle("즐겨찾기에서만 추천", isOn: $store.favoritesOnly)
             Toggle("새로오픈만 추천", isOn: $store.newOnly)
+            Toggle("\(Self.radiusText(Store.nearMeters)) 이내만 추천", isOn: $store.nearOnly)
             Button("식당 리스트 리셋", systemImage: "arrow.clockwise") { resetting = true }
                 .disabled(store.busy)
             VStack(alignment: .leading, spacing: 9) {
@@ -141,7 +143,7 @@ struct ContentView: View {
                 if store.busy { ProgressView().controlSize(.small) }
                 Text(store.status).font(.caption).foregroundStyle(.secondary)
             }
-            Text("Lunch Draw 0.4.2").font(.caption2).foregroundStyle(.tertiary)
+            Text("Lunch Draw 0.4.3").font(.caption2).foregroundStyle(.tertiary)
         }.padding(24).background(Color(nsColor: .controlBackgroundColor))
     }
     private var recommendation: some View {

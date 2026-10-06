@@ -27,6 +27,9 @@ enum AppConfig {
     @Published var category = "전체"
     @Published var favoritesOnly = false
     @Published var newOnly = false
+    /// 반경 설정과 별개로, 가까운 곳만 잠깐 보고 싶을 때 켜는 필터. 저장하지 않는다.
+    @Published var nearOnly = false
+    static let nearMeters: Double = 500
     @Published var search = ""
     let file: URL
     private var pendingSync: Task<Void, Never>?
@@ -53,6 +56,7 @@ enum AppConfig {
             (category == "전체" || $0.theme.rawValue == category) &&
             (!favoritesOnly || state.favorites.contains($0.id)) &&
             (!newOnly || $0.isNew) &&
+            (!nearOnly || $0.distance(from: origin) <= Self.nearMeters) &&
             (search.isEmpty || ($0.name + $0.menu + $0.category).localizedCaseInsensitiveContains(search))
         }.sorted { $0.distance(from: origin) < $1.distance(from: origin) }
     }
