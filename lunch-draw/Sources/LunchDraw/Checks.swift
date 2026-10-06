@@ -103,6 +103,20 @@ enum Checks {
                 restored.refreshRecommendationForFilter()
                 precondition(restored.visibleSelected?.theme == differentTheme)
             }
+            // 목록 자동 갱신: 같으면 그대로, 다르면 교체하고 기록은 남은 식당에 한해 유지한다.
+            precondition(!restored.applyCatalog(restored.state.restaurants))
+            restored.state.excluded = ["k1", "gone"]
+            var renewed = fixtures.filter { $0.id != "k2" }
+            renewed[0].tags = ["새로오픈"]
+            let snapshotsBefore = restored.state.snapshots.count
+            precondition(restored.applyCatalog(renewed))
+            precondition(restored.state.restaurants == renewed && restored.state.restaurants[0].isNew)
+            precondition(restored.state.excluded == ["k1"])
+            precondition(restored.state.favorites.contains(first.id))
+            precondition(restored.state.snapshots.count == min(snapshotsBefore + 1, Store.maxSnapshots))
+            for n in 0..<5 { renewed[0].note = "갱신 \(n)"; restored.applyCatalog(renewed) }
+            precondition(restored.state.snapshots.count == Store.maxSnapshots)
+
             r = eligible[0]; r.naverRating = nil; r.tags = ["새로오픈"]; r.openingURL = "https://example.com/opening"
             precondition(r.isNew && r.eligible(from: origin))
             let roundTrip = try JSONDecoder().decode(Restaurant.self, from: JSONEncoder().encode(r))

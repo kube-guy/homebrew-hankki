@@ -1,5 +1,4 @@
 import Foundation
-import Security
 
 struct Session: Codable {
     var access_token: String
@@ -7,24 +6,62 @@ struct Session: Codable {
     var expires_at: Int?
 }
 
+/// 익명 로그인 세션을 Keychain 에 둔다. Security 프레임워크를 직접 부르지 않고 `/usr/bin/security` 를 거친다.
+/// ad-hoc 서명 앱은 빌드마다 서명이 바뀌어, 프레임워크로 접근하면 실행할 때마다 "키체인 접근 허용" 창이 뜬다.
+/// `security` 가 만든 항목은 `security` 자신을 신뢰하므로 앱을 다시 빌드해도 묻지 않는다.
+/// 서비스 이름은 v2: 예전 빌드가 프레임워크로 만든 항목을 건드리면 그 자체로 허용 창이 뜬다.
 enum Vault {
+    static let service = "app.lunchdraw.session.v2"
+
     static func read(_ account: String) throws -> Data? {
-        let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "app.lunchdraw.session", kSecAttrAccount as String: account, kSecReturnData as String: true]
-        var value: CFTypeRef?
-        let status = SecItemCopyMatching(q as CFDictionary, &value)
-        if status == errSecItemNotFound { return nil }
-        guard status == errSecSuccess else { throw NSError(domain: NSOSStatusErrorDomain, code: Int(status)) }
-        return value as? Data
+        let (status, out) = try run(["find-generic-password", "-s", service, "-a", account, "-w"])
+        if status == 44 { return nil }  // 항목 없음
+        guard status == 0 else { throw failure(status) }
+        let text = String(decoding: out, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        // 값에 출력할 수 없는 문자가 있으면 security 는 16진수로 돌려준다. 세션 JSON 은 보통 평문으로 나온다.
+        return hexDecoded(text) ?? Data(text.utf8)
     }
+
     static func write(_ data: Data, account: String) throws {
-        let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: "app.lunchdraw.session", kSecAttrAccount as String: account]
-        let update = SecItemUpdate(q as CFDictionary, [kSecValueData as String: data] as CFDictionary)
-        if update == errSecItemNotFound {
-            var add = q; add[kSecValueData as String] = data
-            add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-            let status = SecItemAdd(add as CFDictionary, nil)
-            guard status == errSecSuccess else { throw NSError(domain: NSOSStatusErrorDomain, code: Int(status)) }
-        } else if update != errSecSuccess { throw NSError(domain: NSOSStatusErrorDomain, code: Int(update)) }
+        // 토큰을 인자로 넘기면 프로세스 목록에 보인다. `security -i` 의 표준 입력으로 명령을 넘긴다.
+        let hex = data.map { String(format: "%02x", $0) }.joined()
+        let command = "add-generic-password -U -s \(service) -a \(account) -X \(hex)\n"
+        let (status, _) = try run(["-i"], input: Data(command.utf8))
+        guard status == 0 else { throw failure(status) }
+    }
+
+    private static func run(_ arguments: [String], input: Data? = nil) throws -> (Int32, Data) {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/security")
+        process.arguments = arguments
+        let output = Pipe(), stdin = Pipe()
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+        process.standardInput = input == nil ? FileHandle.nullDevice : stdin
+        try process.run()
+        if let input {
+            stdin.fileHandleForWriting.write(input)
+            try stdin.fileHandleForWriting.close()
+        }
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        return (process.terminationStatus, data)
+    }
+
+    private static func hexDecoded(_ text: String) -> Data? {
+        guard text.count % 2 == 0, !text.isEmpty, text.allSatisfy(\.isHexDigit) else { return nil }
+        var bytes = [UInt8](); bytes.reserveCapacity(text.count / 2)
+        var index = text.startIndex
+        while index < text.endIndex {
+            let next = text.index(index, offsetBy: 2)
+            guard let byte = UInt8(text[index..<next], radix: 16) else { return nil }
+            bytes.append(byte); index = next
+        }
+        return Data(bytes)
+    }
+
+    private static func failure(_ status: Int32) -> NSError {
+        NSError(domain: "LunchDraw", code: Int(status), userInfo: [NSLocalizedDescriptionKey: "Keychain 에 로그인 정보를 저장하지 못했습니다 (security \(status))."])
     }
 }
 
@@ -58,9 +95,11 @@ struct Cloud {
         }
         return data
     }
-    func session() async throws -> Session {
+    /// isNew 는 이번에 익명 계정을 새로 만들었는지. 새 계정에는 클라우드 저장 행이 없으므로
+    /// 호출하는 쪽이 저장 버전(revision)을 0 부터 다시 시작해야 한다.
+    func session() async throws -> (session: Session, isNew: Bool) {
         if let saved = try Vault.read(base.host!), let old = try? JSONDecoder().decode(Session.self, from: saved) {
-            if (old.expires_at ?? 0) > Int(Date().timeIntervalSince1970) + 60 { return old }
+            if (old.expires_at ?? 0) > Int(Date().timeIntervalSince1970) + 60 { return (old, false) }
             // A failed refresh must not silently replace the user with a new identity.
             var components = URLComponents(url: base.appendingPathComponent("auth/v1/token"), resolvingAgainstBaseURL: false)!
             components.queryItems = [URLQueryItem(name: "grant_type", value: "refresh_token")]
@@ -70,11 +109,11 @@ struct Cloud {
             let (data, response) = try await URLSession.shared.data(for: req)
             guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else { throw NSError(domain: "LunchDraw", code: 3, userInfo: [NSLocalizedDescriptionKey: "로그인 갱신에 실패했습니다. 기존 식당 목록은 유지됩니다."]) }
             let session = try JSONDecoder().decode(Session.self, from: data)
-            try Vault.write(data, account: base.host!); return session
+            try Vault.write(data, account: base.host!); return (session, false)
         }
         let data = try await request("auth/v1/signup", method: "POST", body: Data("{}".utf8))
         let session = try JSONDecoder().decode(Session.self, from: data)
-        try Vault.write(data, account: base.host!); return session
+        try Vault.write(data, account: base.host!); return (session, true)
     }
     struct Reply: Decodable { var revision: Int; var state: SavedState? }
     func save(_ state: SavedState, session: Session) async throws -> Int {

@@ -5,13 +5,13 @@ import MapKit
 @main struct LunchDrawApp: App {
     @StateObject private var store = Store()
     init() {
-        if CommandLine.arguments.contains("--version") { print("0.4.0"); exit(0) }
+        if CommandLine.arguments.contains("--version") { print("0.4.1"); exit(0) }
         if CommandLine.arguments.contains("--self-check") { Checks.run(); exit(0) }
         if CommandLine.arguments.contains("--cloud-check") {
             Task {
                 do {
                     let cloud = try Cloud(url: AppConfig.url, key: AppConfig.key)
-                    let session = try await cloud.session()
+                    let (session, _) = try await cloud.session()
                     let catalog = try await cloud.catalog(session: session)
                     guard let origin = try await cloud.defaultOrigin(session: session) else {
                         fputs("Default origin is not set in lunch_settings\n", stderr); exit(1)
@@ -25,7 +25,7 @@ import MapKit
         }
     }
     var body: some Scene {
-        WindowGroup("오늘 뭐 먹지 · Lunch Draw") { ContentView().environmentObject(store).frame(minWidth: 1100, minHeight: 650).task { await store.sync() } }
+        WindowGroup("오늘 뭐 먹지 · Lunch Draw") { ContentView().environmentObject(store).frame(minWidth: 1100, minHeight: 650).task { await store.sync(refreshCatalog: true) } }
         .defaultSize(width: 1180, height: 760)
     }
 }
@@ -129,7 +129,7 @@ struct ContentView: View {
                 if store.busy { ProgressView().controlSize(.small) }
                 Text(store.status).font(.caption).foregroundStyle(.secondary)
             }
-            Text("Lunch Draw 0.4.0").font(.caption2).foregroundStyle(.tertiary)
+            Text("Lunch Draw 0.4.1").font(.caption2).foregroundStyle(.tertiary)
         }.padding(24).background(Color(nsColor: .controlBackgroundColor))
     }
     private var recommendation: some View {

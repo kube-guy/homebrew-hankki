@@ -103,24 +103,51 @@ enum AppConfig {
     }
     func exclude(_ id: String) { state.excluded.insert(id); changed() }
     func visited(_ id: String) { state.visits[id] = Date(); changed() }
-    func sync() async {
+    /// 이전 목록은 최근 몇 개만 둔다. 클라우드 저장 상태는 2MB 미만이어야 한다.
+    static let maxSnapshots = 3
+    private func keepSnapshot(_ restaurants: [Restaurant], in next: inout SavedState) {
+        guard !restaurants.isEmpty else { return }
+        next.snapshots.append(Snapshot(restaurants: restaurants))
+        next.snapshots = Array(next.snapshots.suffix(Self.maxSnapshots))
+    }
+    /// Supabase 목록이 바뀌었으면 교체한다. 즐겨찾기·방문 기록·추천 제외는 남아 있는 식당에 한해 유지하고,
+    /// 이전 목록은 보관한다. 바뀐 게 없으면 false.
+    @discardableResult
+    func applyCatalog(_ fresh: [Restaurant]) -> Bool {
+        guard !fresh.isEmpty else { return false }
+        let byID = { (list: [Restaurant]) in Dictionary(list.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a }) }
+        guard byID(fresh) != byID(state.restaurants) else { return false }
+        var next = state
+        keepSnapshot(next.restaurants, in: &next)
+        next.restaurants = fresh
+        let ids = Set(fresh.map(\.id))
+        next.excluded.formIntersection(ids); next.drawn.formIntersection(ids)
+        if let selected = next.selectedID, !ids.contains(selected) { next.selectedID = nil }
+        state = next
+        return true
+    }
+    /// refreshCatalog 는 앱을 켤 때만 true. 변경마다 수백 곳 목록을 다시 받지 않는다.
+    func sync(refreshCatalog: Bool = false) async {
         guard !busy else { return }
         busy = true; defer { busy = false }
         do {
             let cloud = try Cloud(url: AppConfig.url, key: AppConfig.key)
-            let session = try await cloud.session()
+            let (session, isNew) = try await cloud.session()
+            if isNew { state.revision = 0 }
             if let fresh = try await cloud.defaultOrigin(session: session), fresh != state.defaultOrigin {
                 state.defaultOrigin = fresh
             }
-            if state.restaurants.isEmpty {
-                state.restaurants = try await cloud.catalog(session: session)
+            var refreshed = false
+            if refreshCatalog || state.restaurants.isEmpty {
+                refreshed = applyCatalog(try await cloud.catalog(session: session))
             }
             let saving = state
             let revision = try await cloud.save(saving, session: session)
             // Keep any UI edits made while the network request was running.
             let edited = state != saving
             state.revision = revision; try persist()
-            status = edited ? "새 변경사항 저장 대기" : "Supabase에 저장됨"
+            status = edited ? "새 변경사항 저장 대기"
+                : refreshed ? "식당 목록 갱신 \(state.restaurants.count)곳 · Supabase에 저장됨" : "Supabase에 저장됨"
             if edited { changed() }
         } catch { status = "Mac에 저장됨 · 클라우드 저장 재시도 필요"; self.error = error.localizedDescription }
     }
@@ -129,18 +156,21 @@ enum AppConfig {
         pendingSync?.cancel(); busy = true; defer { busy = false }
         do {
             let cloud = try Cloud(url: AppConfig.url, key: AppConfig.key)
-            let session = try await cloud.session()
+            let (session, isNew) = try await cloud.session()
+            if isNew { state.revision = 0 }
             let fresh = try await cloud.catalog(session: session)
             guard fresh.contains(where: eligible) else { throw NSError(domain: "LunchDraw", code: 4, userInfo: [NSLocalizedDescriptionKey: "조건을 만족하는 식당이 없어 기존 목록을 유지합니다."]) }
             var next = state
-            next.snapshots.append(Snapshot(restaurants: next.restaurants))
+            keepSnapshot(next.restaurants, in: &next)
             next.restaurants = fresh; next.excluded.removeAll(); next.drawn.removeAll(); next.selectedID = nil
             next.revision = try await cloud.save(next, session: session)
             state = next; try persist(); status = "목록 재설정 완료 · Supabase에 저장됨"
         } catch { self.error = error.localizedDescription; status = "재설정 실패 · 기존 목록 유지" }
     }
     func restore(_ snapshot: Snapshot) {
-        state.snapshots.append(Snapshot(restaurants: state.restaurants))
+        var next = state
+        keepSnapshot(next.restaurants, in: &next)
+        state = next
         state.restaurants = snapshot.restaurants; state.excluded.removeAll(); state.drawn.removeAll(); state.selectedID = nil
         changed()
     }
