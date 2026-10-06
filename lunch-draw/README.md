@@ -12,6 +12,20 @@
 
 거리는 기준 지점에서 식당까지의 직선거리입니다. 도보거리가 아닙니다. 식당 목록은 관리자가 수집한 지역만 담고 있으므로, 기준 지점을 멀리 옮기면 추천할 식당이 없을 수 있습니다.
 
+## 설치
+
+```sh
+brew tap kube-guy/hankki
+brew install lunch-draw
+mkdir -p ~/.config/lunch-draw
+cp "$(brew --prefix lunch-draw)/share/lunch-draw/config.example.json" ~/.config/lunch-draw/config.json
+chmod 600 ~/.config/lunch-draw/config.json   # supabaseURL·supabaseKey 값을 채운다
+lunch-draw
+```
+
+소스에서 빌드하므로 Xcode 16 이상(Swift 6)이 필요합니다. Supabase 연결 정보는 설치본에 들어 있지 않고,
+`~/.config/lunch-draw/config.json` 에서 읽습니다.
+
 ## 개인정보를 저장소에 두지 않는다
 
 이 저장소는 공개 저장소입니다. 아래 정보는 저장소에 넣지 않습니다.
@@ -20,7 +34,7 @@
 |---|---|
 | 기본 기준 지점 (이름·좌표) | Supabase `lunch_settings` |
 | 식당 목록 | Supabase `restaurants` |
-| Supabase URL·publishable 키 | `config.local.json` (`.gitignore`) → 패키징 때 앱 번들의 Info.plist 에만 들어감 |
+| Supabase URL·publishable 키 | `~/.config/lunch-draw/config.json` (설치본) 또는 `config.local.json` (`.gitignore`, 직접 패키징할 때 Info.plist 에 들어감) |
 | 수집 지역·수집 자료·지역별 보정값 | `research/` (`.gitignore`) |
 
 publishable 키 자체는 비밀이 아니지만, 키가 있으면 익명 로그인으로 기본 지점과 식당 목록을 읽을 수 있어 공개하지 않습니다.

@@ -1,14 +1,21 @@
 import SwiftUI
 
 /// Supabase 연결 정보는 저장소에 두지 않는다. 키만 있으면 기본 지점과 식당 목록을 읽을 수 있기 때문이다.
-/// 패키징할 때 scripts/package-app.sh 가 config.local.json 값을 Info.plist 에 넣고,
-/// `swift run` 으로 개발할 때는 환경 변수를 쓴다.
+/// 찾는 순서:
+/// 1. 앱 번들 Info.plist — scripts/package-app.sh 가 config.local.json 값을 넣는다
+/// 2. 환경 변수 LUNCH_DRAW_SUPABASE_URL / KEY — `swift run` 개발용
+/// 3. ~/.config/lunch-draw/config.json — Homebrew 설치본용 (config.example.json 과 같은 형식)
 enum AppConfig {
-    static var url: String { value("LunchDrawSupabaseURL", env: "LUNCH_DRAW_SUPABASE_URL") }
-    static var key: String { value("LunchDrawSupabaseKey", env: "LUNCH_DRAW_SUPABASE_KEY") }
-    private static func value(_ plistKey: String, env: String) -> String {
+    static var url: String { value("LunchDrawSupabaseURL", env: "LUNCH_DRAW_SUPABASE_URL", file: "supabaseURL") }
+    static var key: String { value("LunchDrawSupabaseKey", env: "LUNCH_DRAW_SUPABASE_KEY", file: "supabaseKey") }
+    static let configFile = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent(".config/lunch-draw/config.json")
+    private static func value(_ plistKey: String, env: String, file fileKey: String) -> String {
         if let value = Bundle.main.object(forInfoDictionaryKey: plistKey) as? String, !value.isEmpty { return value }
-        return ProcessInfo.processInfo.environment[env] ?? ""
+        if let value = ProcessInfo.processInfo.environment[env], !value.isEmpty { return value }
+        guard let data = try? Data(contentsOf: configFile),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return "" }
+        return json[fileKey] as? String ?? ""
     }
 }
 

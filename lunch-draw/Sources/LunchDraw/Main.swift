@@ -5,7 +5,7 @@ import MapKit
 @main struct LunchDrawApp: App {
     @StateObject private var store = Store()
     init() {
-        if CommandLine.arguments.contains("--version") { print("0.3.1"); exit(0) }
+        if CommandLine.arguments.contains("--version") { print("0.4.0"); exit(0) }
         if CommandLine.arguments.contains("--self-check") { Checks.run(); exit(0) }
         if CommandLine.arguments.contains("--cloud-check") {
             Task {
@@ -129,7 +129,7 @@ struct ContentView: View {
                 if store.busy { ProgressView().controlSize(.small) }
                 Text(store.status).font(.caption).foregroundStyle(.secondary)
             }
-            Text("Lunch Draw 0.3.1").font(.caption2).foregroundStyle(.tertiary)
+            Text("Lunch Draw 0.4.0").font(.caption2).foregroundStyle(.tertiary)
         }.padding(24).background(Color(nsColor: .controlBackgroundColor))
     }
     private var recommendation: some View {

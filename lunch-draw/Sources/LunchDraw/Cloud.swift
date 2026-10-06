@@ -33,7 +33,7 @@ struct Cloud {
     var key: String
     init(url: String, key: String) throws {
         guard let u = URL(string: url), u.scheme == "https", let host = u.host, host.hasSuffix(".supabase.co"), u.path.isEmpty || u.path == "/", !key.isEmpty else {
-            throw NSError(domain: "LunchDraw", code: 1, userInfo: [NSLocalizedDescriptionKey: "Supabase 연결 정보가 없습니다. config.local.json 으로 패키징하거나 LUNCH_DRAW_SUPABASE_URL·KEY 를 설정해주세요."])
+            throw NSError(domain: "LunchDraw", code: 1, userInfo: [NSLocalizedDescriptionKey: "Supabase 연결 정보가 없습니다. ~/.config/lunch-draw/config.json 에 supabaseURL·supabaseKey 를 적어주세요."])
         }
         // Secret and service-role keys must never be used by the desktop client.
         guard !key.hasPrefix("sb_secret_") else { throw NSError(domain: "LunchDraw", code: 2, userInfo: [NSLocalizedDescriptionKey: "공개 publishable/anon 키만 사용할 수 있습니다."]) }
