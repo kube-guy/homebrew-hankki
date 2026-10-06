@@ -97,12 +97,12 @@ enum Checks {
             precondition(!restored.candidates.isEmpty && restored.candidates.allSatisfy { $0.distance(from: restored.origin!) <= Store.nearMeters })
             precondition(!restored.candidates.contains { $0.id == "w1" || $0.id == "a1" })
             restored.nearOnly = false
-            // 가격 필터: 상한 이하만 남긴다. 픽스처는 모두 12,000원.
-            restored.maxPrice = 10_000
-            precondition(restored.candidates.isEmpty)
-            restored.maxPrice = 15_000
+            // 가격 필터: 하한 이상만 남긴다. 픽스처는 모두 12,000원.
+            restored.minPrice = 10_000
             precondition(restored.candidates.count == eligible.count)
-            restored.maxPrice = nil
+            restored.minPrice = 15_000
+            precondition(restored.candidates.isEmpty)
+            restored.minPrice = nil
             // 정렬: 거리순은 가까운 순, 평점순은 평균 평점 높은 순.
             let savedOrder = restored.sortOrder
             restored.sortOrder = .distance

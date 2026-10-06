@@ -5,7 +5,7 @@ import MapKit
 @main struct LunchDrawApp: App {
     @StateObject private var store = Store()
     init() {
-        if CommandLine.arguments.contains("--version") { print("0.4.5"); exit(0) }
+        if CommandLine.arguments.contains("--version") { print("0.4.6"); exit(0) }
         if CommandLine.arguments.contains("--self-check") { Checks.run(); exit(0) }
         if CommandLine.arguments.contains("--cloud-check") {
             Task {
@@ -103,7 +103,7 @@ struct ContentView: View {
         .onChange(of: store.favoritesOnly) { _, _ in store.refreshRecommendationForFilter() }
         .onChange(of: store.newOnly) { _, _ in store.refreshRecommendationForFilter() }
         .onChange(of: store.nearOnly) { _, _ in store.refreshRecommendationForFilter() }
-        .onChange(of: store.maxPrice) { _, _ in store.refreshRecommendationForFilter() }
+        .onChange(of: store.minPrice) { _, _ in store.refreshRecommendationForFilter() }
     }
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -128,9 +128,9 @@ struct ContentView: View {
             Divider()
             TextField("식당·메뉴 검색", text: $store.search).textFieldStyle(.roundedBorder)
             Picker("먹고 싶은 종류", selection: $store.category) { ForEach(store.categories, id: \.self) { Text($0) } }
-            Picker("가격", selection: $store.maxPrice) {
+            Picker("가격", selection: $store.minPrice) {
                 Text("전체 (3만원 미만)").tag(Int?.none)
-                ForEach(Store.priceChoices, id: \.self) { Text("\(Self.priceText($0)) 이하").tag(Int?.some($0)) }
+                ForEach(Store.priceChoices, id: \.self) { Text("\(Self.priceText($0)) 이상").tag(Int?.some($0)) }
             }
             Toggle("즐겨찾기에서만 추천", isOn: $store.favoritesOnly)
             Toggle("새로오픈만 추천", isOn: $store.newOnly)
@@ -151,7 +151,7 @@ struct ContentView: View {
                 if store.busy { ProgressView().controlSize(.small) }
                 Text(store.status).font(.caption).foregroundStyle(.secondary)
             }
-            Text("Lunch Draw 0.4.5").font(.caption2).foregroundStyle(.tertiary)
+            Text("Lunch Draw 0.4.6").font(.caption2).foregroundStyle(.tertiary)
         }.padding(24).background(Color(nsColor: .controlBackgroundColor))
     }
     private var recommendation: some View {

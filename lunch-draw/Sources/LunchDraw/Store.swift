@@ -30,8 +30,8 @@ enum AppConfig {
     /// 반경 설정과 별개로, 가까운 곳만 잠깐 보고 싶을 때 켜는 필터. 저장하지 않는다.
     @Published var nearOnly = false
     static let nearMeters: Double = 500
-    /// 대표 메뉴 가격 상한. nil 이면 기본 조건(3만원 미만)만 본다. 저장하지 않는다.
-    @Published var maxPrice: Int?
+    /// 대표 메뉴 가격 하한. nil 이면 기본 조건(3만원 미만)만 본다. 저장하지 않는다.
+    @Published var minPrice: Int?
     static let priceChoices = [10_000, 15_000, 20_000]
     enum SortOrder: String, CaseIterable { case distance = "거리순", rating = "평점순" }
     /// 목록 정렬. 랜덤 추천과는 상관없다. 이 Mac 에만 기억한다 (클라우드 상태에는 넣지 않음).
@@ -65,7 +65,7 @@ enum AppConfig {
             (!favoritesOnly || state.favorites.contains($0.id)) &&
             (!newOnly || $0.isNew) &&
             (!nearOnly || $0.distance(from: origin) <= Self.nearMeters) &&
-            (maxPrice == nil || $0.price <= maxPrice!) &&
+            (minPrice == nil || $0.price >= minPrice!) &&
             (search.isEmpty || ($0.name + $0.menu + $0.category).localizedCaseInsensitiveContains(search))
         }.sorted { a, b in
             switch sortOrder {
