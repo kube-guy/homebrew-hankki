@@ -9,23 +9,30 @@ permissions:
 
 jobs:
   app:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: hankki
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run build
-      - name: Verify committed bundle
-        run: git diff --exit-code -- dist/sync.js
+      - run: swift --version
+      - run: swift build -c release --product hankki
+      - run: .build/release/hankki --version
+      - run: .build/release/hankki --self-check
 
   homebrew:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      # Formula 의 url 은 릴리스 태그를 가리킨다. CI 에서는 이 커밋의 아카이브로 바꿔 설치 과정을 검증한다.
+      # 바꾼 Formula 는 이 러너 안에서만 커밋하고 푸시하지 않는다.
+      - name: Point the formula at this checkout
+        run: |
+          archive="$RUNNER_TEMP/homebrew-hankki.tar.gz"
+          git archive --format=tar.gz --prefix=homebrew-hankki/ -o "$archive" HEAD
+          sha=$(shasum -a 256 "$archive" | cut -d' ' -f1)
+          sed -i '' -e "s|^  url .*|  url \"file://$archive\"|" -e "s|^  sha256 .*|  sha256 \"$sha\"|" Formula/hankki.rb
+          git -c user.name=ci -c user.email=ci@localhost commit -qam "CI: install from this checkout"
       - name: Install tap from this checkout
         run: brew tap kube-guy/hankki "$GITHUB_WORKSPACE"
       - run: brew install --build-from-source kube-guy/hankki/hankki
