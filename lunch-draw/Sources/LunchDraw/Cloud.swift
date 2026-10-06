@@ -83,15 +83,23 @@ struct Cloud {
         }
         base = u; self.key = key
     }
-    func request(_ path: String, method: String = "GET", body: Data? = nil, token: String? = nil) async throws -> Data {
-        var req = URLRequest(url: base.appendingPathComponent(path)); req.httpMethod = method; req.httpBody = body; req.timeoutInterval = 25
+    func request(_ path: String, method: String = "GET", query: [URLQueryItem] = [], body: Data? = nil, token: String? = nil) async throws -> Data {
+        var components = URLComponents(url: base.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        if !query.isEmpty { components.queryItems = query }
+        var req = URLRequest(url: components.url!); req.httpMethod = method; req.httpBody = body; req.timeoutInterval = 25
         req.setValue(key, forHTTPHeaderField: "apikey")
         if let token { req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let (data, response) = try await URLSession.shared.data(for: req)
         guard let response = response as? HTTPURLResponse, (200..<300).contains(response.statusCode) else {
             let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-            throw NSError(domain: "LunchDraw", code: status, userInfo: [NSLocalizedDescriptionKey: "클라우드 요청 실패 (\(status)). 연결·익명 로그인·데이터베이스 설정을 확인해주세요."])
+            // PostgREST 는 {"code": "P0001", "message": "..."} 로 사유를 준다. 있으면 그대로 보여준다.
+            let body = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+            let reason = (body?["message"] as? String).map { " · \($0)" } ?? ""
+            throw NSError(domain: "LunchDraw", code: status, userInfo: [
+                NSLocalizedDescriptionKey: "클라우드 요청 실패 (\(status))\(reason)",
+                "postgrestCode": body?["code"] as? String ?? "",
+            ])
         }
         return data
     }
@@ -121,6 +129,23 @@ struct Cloud {
         let body = try JSONSerialization.data(withJSONObject: ["p_state": object, "p_expected_revision": state.revision])
         let reply = try JSONDecoder().decode(Reply.self, from: await request("rest/v1/rpc/save_lunch_state", method: "POST", body: body, token: session.access_token))
         return reply.revision
+    }
+    /// 이 계정의 클라우드 저장 행 revision. 행이 없으면 nil.
+    func remoteRevision(session: Session) async throws -> Int? {
+        let data = try await request("rest/v1/lunch_states", query: [URLQueryItem(name: "select", value: "revision")], token: session.access_token)
+        let rows = try JSONDecoder().decode([Reply].self, from: data)
+        return rows.first?.revision
+    }
+    /// 저장하다 revision 충돌이 났는데 서버에 이 계정의 행이 아예 없으면(새 익명 계정) 0 부터 다시 저장한다.
+    /// 행이 있는데 버전이 다르면 다른 곳에서 바뀐 것이므로 덮어쓰지 않고 오류를 그대로 올린다.
+    func saveCreatingIfMissing(_ state: SavedState, session: Session) async throws -> Int {
+        do {
+            return try await save(state, session: session)
+        } catch let error as NSError where error.userInfo["postgrestCode"] as? String == "P0001" {
+            guard try await remoteRevision(session: session) == nil else { throw error }
+            var fresh = state; fresh.revision = 0
+            return try await save(fresh, session: session)
+        }
     }
     /// 모두에게 적용되는 기본 기준 지점. 설정 행이 없으면 nil.
     func defaultOrigin(session: Session) async throws -> Origin? {

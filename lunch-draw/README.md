@@ -61,6 +61,11 @@ python3 scripts/make-upsert.py      # SQL Editor 에 붙여 넣을 research/upse
 
 카페·디저트·술집 업종은 제외합니다. 대표 메뉴는 식사 메뉴 이름 규칙에 맞는 30,000원 미만 메뉴 중 네이버가 '대표'로 표시한 것을 먼저 고릅니다. 앱을 다시 켜면 반영됩니다.
 
+## 아이콘
+
+`Resources/AppIcon.icns` 는 `swift scripts/render-icon.swift` 로 다시 만든다. 그릇과 김은 점심, 오른쪽 아래 주사위는
+랜덤 뽑기를 뜻한다. SF Symbols 는 앱 아이콘에 쓸 수 없어 도형을 직접 그린다.
+
 ## 빌드 및 확인
 
 ```sh
@@ -69,6 +74,7 @@ swift build -c release --disable-sandbox
 bash scripts/package-app.sh --skip-build
 build/'Lunch Draw.app'/Contents/MacOS/lunch-draw --self-check
 build/'Lunch Draw.app'/Contents/MacOS/lunch-draw --cloud-check
+build/'Lunch Draw.app'/Contents/MacOS/lunch-draw --sync-check   # 앱을 켤 때와 같은 동기화를 창 없이 실행
 ```
 
 `swift run` 으로 개발할 때는 `LUNCH_DRAW_SUPABASE_URL`, `LUNCH_DRAW_SUPABASE_KEY` 환경 변수로 연결 정보를 넘깁니다. 자체 검사(`--self-check`)는 가상의 지점과 식당으로 돌기 때문에 연결 정보 없이도 됩니다.

@@ -5,7 +5,7 @@ import MapKit
 @main struct LunchDrawApp: App {
     @StateObject private var store = Store()
     init() {
-        if CommandLine.arguments.contains("--version") { print("0.4.1"); exit(0) }
+        if CommandLine.arguments.contains("--version") { print("0.4.2"); exit(0) }
         if CommandLine.arguments.contains("--self-check") { Checks.run(); exit(0) }
         if CommandLine.arguments.contains("--cloud-check") {
             Task {
@@ -20,6 +20,18 @@ import MapKit
                     print("Cloud catalog: \(catalog.count); eligible: \(eligible) (default origin, \(Int(origin.radiusMeters))m)")
                     exit(0)
                 } catch { fputs("\(error.localizedDescription)\n", stderr); exit(1) }
+            }
+            RunLoop.main.run()
+        }
+        // 앱을 켤 때와 같은 동기화(목록 갱신 + 클라우드 저장)를 창 없이 한 번 돌린다.
+        if CommandLine.arguments.contains("--sync-check") {
+            Task { @MainActor in
+                let store = Store()
+                await store.sync(refreshCatalog: true)
+                let new = store.state.restaurants.filter(\.isNew).count
+                print("\(store.status) · 식당 \(store.state.restaurants.count)곳 (새로오픈 \(new)) · revision \(store.state.revision)")
+                if let error = store.error { fputs("\(error)\n", stderr); exit(1) }
+                exit(0)
             }
             RunLoop.main.run()
         }
@@ -129,7 +141,7 @@ struct ContentView: View {
                 if store.busy { ProgressView().controlSize(.small) }
                 Text(store.status).font(.caption).foregroundStyle(.secondary)
             }
-            Text("Lunch Draw 0.4.1").font(.caption2).foregroundStyle(.tertiary)
+            Text("Lunch Draw 0.4.2").font(.caption2).foregroundStyle(.tertiary)
         }.padding(24).background(Color(nsColor: .controlBackgroundColor))
     }
     private var recommendation: some View {

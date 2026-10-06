@@ -130,6 +130,7 @@ enum AppConfig {
     func sync(refreshCatalog: Bool = false) async {
         guard !busy else { return }
         busy = true; defer { busy = false }
+        var refreshed = false
         do {
             let cloud = try Cloud(url: AppConfig.url, key: AppConfig.key)
             let (session, isNew) = try await cloud.session()
@@ -137,19 +138,23 @@ enum AppConfig {
             if let fresh = try await cloud.defaultOrigin(session: session), fresh != state.defaultOrigin {
                 state.defaultOrigin = fresh
             }
-            var refreshed = false
             if refreshCatalog || state.restaurants.isEmpty {
                 refreshed = applyCatalog(try await cloud.catalog(session: session))
+                // 클라우드 저장이 실패해도 받은 목록은 이 Mac 에 남긴다.
+                if refreshed { try persist() }
             }
             let saving = state
-            let revision = try await cloud.save(saving, session: session)
+            let revision = try await cloud.saveCreatingIfMissing(saving, session: session)
             // Keep any UI edits made while the network request was running.
             let edited = state != saving
             state.revision = revision; try persist()
             status = edited ? "새 변경사항 저장 대기"
                 : refreshed ? "식당 목록 갱신 \(state.restaurants.count)곳 · Supabase에 저장됨" : "Supabase에 저장됨"
             if edited { changed() }
-        } catch { status = "Mac에 저장됨 · 클라우드 저장 재시도 필요"; self.error = error.localizedDescription }
+        } catch {
+            status = refreshed ? "식당 목록 갱신 \(state.restaurants.count)곳 · 클라우드 저장 재시도 필요" : "Mac에 저장됨 · 클라우드 저장 재시도 필요"
+            self.error = error.localizedDescription
+        }
     }
     func reset() async {
         guard !busy else { return }
@@ -163,7 +168,7 @@ enum AppConfig {
             var next = state
             keepSnapshot(next.restaurants, in: &next)
             next.restaurants = fresh; next.excluded.removeAll(); next.drawn.removeAll(); next.selectedID = nil
-            next.revision = try await cloud.save(next, session: session)
+            next.revision = try await cloud.saveCreatingIfMissing(next, session: session)
             state = next; try persist(); status = "목록 재설정 완료 · Supabase에 저장됨"
         } catch { self.error = error.localizedDescription; status = "재설정 실패 · 기존 목록 유지" }
     }

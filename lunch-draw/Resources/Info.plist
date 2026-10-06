@@ -3,11 +3,12 @@
 <plist version="1.0"><dict>
 <key>CFBundleExecutable</key><string>lunch-draw</string>
 <key>CFBundleIdentifier</key><string>app.lunchdraw.mac</string>
+<key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundleName</key><string>Lunch Draw</string>
 <key>CFBundleDisplayName</key><string>오늘 뭐 먹지</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.4.1</string>
-<key>CFBundleVersion</key><string>6</string>
+<key>CFBundleShortVersionString</key><string>0.4.2</string>
+<key>CFBundleVersion</key><string>7</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
