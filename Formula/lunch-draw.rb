@@ -1,9 +1,9 @@
 class LunchDraw < Formula
   desc "Random lunch picks near a chosen origin, synced with Supabase"
   homepage "https://github.com/kube-guy/homebrew-hankki/tree/main/lunch-draw"
-  url "https://github.com/kube-guy/homebrew-hankki/archive/refs/tags/lunch-draw-v0.4.4.tar.gz"
-  version "0.4.4"
-  sha256 "7bcab80002da1eabbe9fb8df70049ff12094a4e2671adf963fa7c95e1e3b5408"
+  url "https://github.com/kube-guy/homebrew-hankki/archive/refs/tags/lunch-draw-v0.4.5.tar.gz"
+  version "0.4.5"
+  sha256 "51499a9fe5c2960b1a5e3cda6d8107cdbf6a07e641b8d0057125d2b7e0ceafeb"
 
   # Command Line Tools 의 Swift 6 으로 빌드된다. Xcode 전체를 요구하지 않는다.
   depends_on arch: :arm64
