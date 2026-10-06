@@ -75,6 +75,11 @@ brew install --build-from-source kube-guy/hankki/hankki
 brew test kube-guy/hankki/hankki
 ```
 
+## 같은 tap 의 다른 앱
+
+- **lunch-draw** — 기준 지점 근처 평점 4.0 이상 식당을 랜덤으로 추천하는 macOS 앱.
+  `brew install kube-guy/hankki/lunch-draw`. 설정과 설명은 [lunch-draw/README.md](lunch-draw/README.md).
+
 ## 아기 메뉴
 
 연령은 참고용입니다. 만 0세 메뉴는 이유식을 시작한 아이를 전제로 하며 발달·이미 먹어본 재료·음식 질감을 함께 확인해야 합니다. 레시피의 재료량은 1회 권장 섭취량이 아닙니다. 영양 처방이나 완전한 식단 구성 도구가 아닙니다.
