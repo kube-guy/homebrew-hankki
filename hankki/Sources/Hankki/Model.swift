@@ -14,6 +14,34 @@ struct Recipe: Identifiable, Hashable {
     var amounts: [String]
     var steps: [String]
     var ageYears: Int { ageMonths / 12 }
+
+    /// 다른 레시피를 찾아볼 때 쓰는 검색어. 괄호 속 설명은 빼고, 아기 메뉴는 앞의 "아이 " 대신 "유아식"을 붙인다.
+    var searchTerm: String {
+        let plain = name.replacingOccurrences(of: #"\s*\(.*\)"#, with: "", options: .regularExpression)
+        guard audience == .baby else { return plain }
+        return "유아식 " + (plain.hasPrefix("아이 ") ? String(plain.dropFirst(3)) : plain)
+    }
+
+    /// 사진과 다른 레시피를 볼 수 있는 검색 링크. 앱의 레시피는 여러 레시피 글을 참고해 새로 쓴 것이라
+    /// 하나의 원문 대신 검색 결과로 연결한다.
+    var referenceLinks: [RecipeLink] {
+        let query = searchTerm.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let video = (searchTerm + " 레시피").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        var links: [RecipeLink] = []
+        if let url = URL(string: "https://www.10000recipe.com/recipe/list.html?q=" + query) {
+            links.append(RecipeLink(title: "만개의레시피에서 보기", url: url))
+        }
+        if let url = URL(string: "https://www.youtube.com/results?search_query=" + video) {
+            links.append(RecipeLink(title: "YouTube에서 보기", url: url))
+        }
+        return links
+    }
+}
+
+struct RecipeLink: Hashable, Identifiable {
+    var title: String
+    var url: URL
+    var id: URL { url }
 }
 
 struct IngredientGroup: Identifiable, Hashable {

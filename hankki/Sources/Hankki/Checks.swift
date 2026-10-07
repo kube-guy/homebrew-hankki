@@ -102,6 +102,13 @@ import Foundation
             return Catalog.recipes.allSatisfy { $0.ingredients.allSatisfy { known.contains($0) } }
                 && Set(Catalog.recipes.map(\.id)).count == Catalog.recipes.count
         }
+        expect("every recipe has search links") {
+            Catalog.recipes.allSatisfy { recipe in
+                recipe.referenceLinks.count == 2 && recipe.referenceLinks.allSatisfy { $0.url.scheme == "https" && $0.url.host != nil }
+            }
+                && Catalog.recipes.first { $0.id == "b29" }?.searchTerm == "유아식 소고기 장조림"
+                && Catalog.recipes.first { $0.id == "f52" }?.searchTerm == "소고기 덮밥"
+        }
         expect("draw avoids the previous pick") {
             let two = Array(Catalog.recipes.prefix(2))
             return (0..<20).allSatisfy { _ in Menu.pick(two, previous: "f1")?.id == "f2" } && Menu.pick([], previous: nil) == nil
