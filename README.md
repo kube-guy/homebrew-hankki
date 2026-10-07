@@ -84,6 +84,8 @@ swift run hankki --self-check    # 문장 해석·장보기·메뉴·동기화 �
 | `Views.swift` | SwiftUI 화면 |
 | `Checks.swift` | `--self-check` |
 
+앱 아이콘은 `scripts/render-icon.py`가 그립니다(`python3 -m pip install pillow` 후 `python3 scripts/render-icon.py`). 결과인 `Resources/AppIcon.png`·`AppIcon.icns`도 커밋합니다.
+
 ### Homebrew 배포
 
 `Formula/hankki.rb`가 설치 정의입니다. 태그 아카이브를 받아 `swift build`로 빌드하고, `Hankki.app` 번들을 만들어 ad-hoc 서명합니다. `hankki` 명령은 `open -a`로 앱을 엽니다.
