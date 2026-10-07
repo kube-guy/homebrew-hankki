@@ -97,6 +97,11 @@ import Foundation
             return options.babyAge == 2
                 && Menu.candidates(Kitchen(), options).count == Catalog.recipes.filter { $0.audience == .baby }.count
         }
+        expect("recipes use known ingredients and unique ids") {
+            let known = Set(Catalog.groups.flatMap(\.items))
+            return Catalog.recipes.allSatisfy { $0.ingredients.allSatisfy { known.contains($0) } }
+                && Set(Catalog.recipes.map(\.id)).count == Catalog.recipes.count
+        }
         expect("draw avoids the previous pick") {
             let two = Array(Catalog.recipes.prefix(2))
             return (0..<20).allSatisfy { _ in Menu.pick(two, previous: "f1")?.id == "f2" } && Menu.pick([], previous: nil) == nil

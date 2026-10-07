@@ -576,7 +576,7 @@ struct RecipeCollection: View {
                 Text(need == 0 ? "✓ 지금 만들 수 있어요" : "재료 \(need)개 더 필요")
                     .foregroundStyle(need == 0 ? Color(red: 0.39, green: 0.5, blue: 0.27) : Color(red: 0.62, green: 0.52, blue: 0.42))
                 Spacer()
-                Text(recipe.audience == .baby ? "무첨가 간" : "1인분").foregroundStyle(Palette.muted)
+                Text(recipe.audience == .baby ? "순한 맛" : "집밥").foregroundStyle(Palette.muted)
             }
             .font(.caption)
             .padding(.horizontal, 18).padding(.vertical, 10)
@@ -610,7 +610,7 @@ struct RecipeDetail: View {
                     Button { dismiss() } label: { Image(systemName: "xmark").font(.title3) }
                         .buttonStyle(.plain).keyboardShortcut(.cancelAction).help("레시피 닫기")
                 }
-                Text((recipe.audience == .baby ? "아기 메뉴 · 참고 연령 만 \(recipe.ageYears)세부터" : "가족 메뉴 · 1인분") + " · \(recipe.minutes)분")
+                Text((recipe.audience == .baby ? "아기 메뉴 · 참고 연령 만 \(recipe.ageYears)세부터" : "가족 메뉴") + " · \(recipe.minutes)분")
                     .font(.caption).foregroundStyle(Color(red: 0.55, green: 0.38, blue: 0.27))
                 Text(recipe.name).font(.system(size: 26, weight: .bold))
                 Text("준비할 재료").font(.headline)
