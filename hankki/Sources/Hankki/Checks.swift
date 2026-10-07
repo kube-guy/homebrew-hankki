@@ -79,7 +79,7 @@ import Foundation
         }
 
         // 메뉴 고르기
-        let kitchen = Kitchen(pantry: ["밥", "당근", "양파"], staples: ["달걀", "식용유"])
+        let kitchen = Kitchen(pantry: ["밥", "당근", "양파", "대파", "간장"], staples: ["달걀", "식용유"])
         expect("only recipes we can make") {
             let found = Menu.candidates(kitchen, DrawOptions())
             return found.contains { $0.id == "f1" } && found.allSatisfy { kitchen.missing($0).isEmpty && $0.audience == .family }
