@@ -89,8 +89,8 @@ swift run hankki --self-check    # 문장 해석·장보기·메뉴·동기화 �
 `Formula/hankki.rb`가 설치 정의입니다. 태그 아카이브를 받아 `swift build`로 빌드하고, `Hankki.app` 번들을 만들어 ad-hoc 서명합니다. `hankki` 명령은 `open -a`로 앱을 엽니다.
 
 1. `hankki/Sources/Hankki/Main.swift`의 `version`, `hankki/Resources/Info.plist`의 버전, Formula의 `version`·`url`을 맞춥니다.
-2. main에 머지한 뒤 `hankki-v<버전>` 태그를 푸시합니다.
-3. `curl -L https://github.com/kube-guy/homebrew-hankki/archive/refs/tags/hankki-v<버전>.tar.gz | shasum -a 256`으로 얻은 값을 Formula의 `sha256`에 넣어 커밋합니다.
+2. main에 머지한 뒤 Formula의 `url`을 그 커밋의 아카이브(`archive/<커밋>.tar.gz`) 또는 `hankki-v<버전>` 태그 아카이브(`archive/refs/tags/hankki-v<버전>.tar.gz`)로 정합니다.
+3. `curl -L <url> | shasum -a 256`으로 얻은 값을 Formula의 `sha256`에 넣어 커밋합니다.
 
 CI(`.github/workflows/test.yml`)는 macOS에서 앱을 빌드해 `--self-check`를 돌리고, Formula의 `url`을 현재 커밋의 아카이브로 바꿔 `brew install`·`brew test`까지 확인합니다.
 
