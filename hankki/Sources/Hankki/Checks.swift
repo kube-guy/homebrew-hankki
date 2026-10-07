@@ -105,7 +105,9 @@ import Foundation
         }
         expect("every recipe has search links") {
             Catalog.recipes.allSatisfy { recipe in
-                recipe.referenceLinks.count == 2 && recipe.referenceLinks.allSatisfy { $0.url.scheme == "https" && $0.url.host != nil }
+                recipe.referenceLinks.count == (recipe.source == nil ? 2 : 3)
+                    && recipe.referenceLinks.allSatisfy { $0.url.scheme == "https" && $0.url.host != nil }
+                    && (recipe.source.map { $0.url.host == "www.youtube.com" } ?? true)
             }
                 && Catalog.recipes.first { $0.id == "b29" }?.searchTerm == "유아식 소고기 장조림"
                 && Catalog.recipes.first { $0.id == "f52" }?.searchTerm == "소고기 덮밥"

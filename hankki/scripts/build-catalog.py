@@ -17,6 +17,7 @@ TARGET = ROOT / "Sources" / "Hankki" / "CatalogData.swift"
 BANNED = ["햄", "굴소스", "청경채", "소시지", "베이컨", "스팸", "생굴", "꿀"]
 BABY_BANNED = ["고춧가루", "청양고추", "고추장", "통견과", "날달걀", "반숙"]
 KEYS = {"id", "name", "audience", "ageMonths", "minutes", "emoji", "category", "ingredients", "amounts", "steps"}
+SOURCE_URL = re.compile(r"https://www\.youtube\.com/(watch\?v=[A-Za-z0-9_-]{11}|shorts/[A-Za-z0-9_-]{11})")
 
 
 def problems(catalog):
@@ -34,9 +35,13 @@ def problems(catalog):
     ids, names = set(), set()
     for r in catalog["recipes"]:
         where = f"{r.get('id', '?')} {r.get('name', '?')}"
-        if set(r) != KEYS:
-            out.append(f"{where}: 키가 {sorted(KEYS)} 와 달라요")
+        if set(r) - {"source"} != KEYS:
+            out.append(f"{where}: 키가 {sorted(KEYS)} (+ source) 와 달라요")
             continue
+        source = r.get("source")
+        if source is not None and not (isinstance(source, dict) and set(source) == {"title", "url"}
+                                       and source["title"] and SOURCE_URL.fullmatch(source["url"] or "")):
+            out.append(f"{where}: source 는 null 이거나 YouTube 영상 {{title, url}} 이어야 합니다")
         if r["id"] in ids:
             out.append(f"{where}: id 중복")
         if r["name"] in names:

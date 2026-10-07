@@ -673,13 +673,20 @@ struct RecipeDetail: View {
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     Text("사진과 다른 레시피 보기").font(.headline)
-                    HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 6) {
                         ForEach(recipe.referenceLinks) { link in
-                            Link(destination: link.url) { Label(link.title, systemImage: "arrow.up.right.square") }
+                            Link(destination: link.url) {
+                                Label(link.title, systemImage: link.title.hasPrefix("참고 영상") ? "play.rectangle" : "magnifyingglass")
+                                    .lineLimit(1)
+                            }
+                            .help(link.url.absoluteString)
                         }
                     }
                     .font(.callout)
-                    Text("“\(recipe.searchTerm)” 검색 결과로 이동해요.").font(.caption).foregroundStyle(Palette.muted)
+                    Text(recipe.source == nil
+                         ? "“\(recipe.searchTerm)” 검색 결과로 이동해요."
+                         : "참고 영상은 이 레시피를 확인할 때 대조한 영상이에요. 나머지는 “\(recipe.searchTerm)” 검색 결과로 이동해요.")
+                        .font(.caption).foregroundStyle(Palette.muted)
                 }
                 if recipe.audience == .baby {
                     Text("재료량은 조리 예시이며 1회 권장 섭취량이 아니에요. 연령만으로 적합성을 판단하지 말고 이미 먹어본 재료와 아이의 발달을 확인하세요. 소금·설탕·꿀은 넣지 않아요.")

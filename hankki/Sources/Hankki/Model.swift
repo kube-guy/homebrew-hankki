@@ -15,6 +15,8 @@ struct Recipe: Identifiable, Hashable, Codable {
     var ingredients: [String]
     var amounts: [String]
     var steps: [String]
+    /// 레시피를 확인할 때 대조한 YouTube 영상. 없으면 nil.
+    var source: RecipeSource?
     var ageYears: Int { ageMonths / 12 }
 
     /// 다른 레시피를 찾아볼 때 쓰는 검색어. 괄호 속 설명은 빼고, 아기 메뉴는 앞의 "아이 " 대신 "유아식"을 붙인다.
@@ -30,6 +32,9 @@ struct Recipe: Identifiable, Hashable, Codable {
         let query = searchTerm.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let video = (searchTerm + " 레시피").addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         var links: [RecipeLink] = []
+        if let source {
+            links.append(RecipeLink(title: "참고 영상: " + source.title, url: source.url))
+        }
         if let url = URL(string: "https://www.10000recipe.com/recipe/list.html?q=" + query) {
             links.append(RecipeLink(title: "만개의레시피에서 보기", url: url))
         }
@@ -38,6 +43,11 @@ struct Recipe: Identifiable, Hashable, Codable {
         }
         return links
     }
+}
+
+struct RecipeSource: Hashable, Codable {
+    var title: String
+    var url: URL
 }
 
 struct RecipeLink: Hashable, Identifiable {
