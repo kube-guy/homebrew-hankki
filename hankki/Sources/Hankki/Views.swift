@@ -320,12 +320,9 @@ struct ChooserPanel: View {
                 modeCard(.baby, symbol: "heart", title: "아기 한 끼", note: "우리 아이를 위한 메뉴")
             }
             if store.options.audience == .baby {
-                Picker("아기 연령", selection: $store.options.babyAge) {
-                    Text("만 0세 · 이유식 시작 후").tag(0)
-                    Text("만 1세").tag(1)
-                    Text("만 2세 이상").tag(2)
-                }
-                Text("연령은 참고 기준이에요. 만 0세는 이유식을 시작한 아이를 대상으로 하며, 이미 먹어본 재료와 발달에 맞는 질감을 확인해 주세요.")
+                Label("아기 연령 · 만 2세 이상", systemImage: "figure.and.child.holdinghands")
+                    .font(.callout)
+                Text("만 2세 이상 아이 기준으로 모든 아기 메뉴를 보여 줘요. 이미 먹어본 재료와 아이에게 맞는 크기·질감을 확인해 주세요.")
                     .font(.caption).foregroundStyle(Palette.muted)
             }
             DisclosureGroup("알레르기 · 제외할 재료 (\(store.options.excluded.count)개)") {

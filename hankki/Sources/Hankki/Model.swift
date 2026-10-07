@@ -55,8 +55,8 @@ struct Kitchen: Codable, Equatable {
 
 struct DrawOptions: Equatable {
     var audience: Audience = .family
-    /// 아기 연령(만 나이). 0, 1, 2(2세 이상).
-    var babyAge = 0
+    /// 아기 연령(만 나이). 앱에서는 만 2세 이상으로 고정해 아기 메뉴를 모두 보여 준다.
+    var babyAge = 2
     var excluded: Set<String> = []
     var onlyWhatWeHave = true
 }

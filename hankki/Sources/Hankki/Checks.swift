@@ -92,6 +92,11 @@ import Foundation
             let excluded = Menu.candidates(kitchen, options).map(\.id)
             return !infant.contains("b8") && toddler.contains("b8") && !excluded.contains("b8") && !excluded.contains("b5")
         }
+        expect("baby age is fixed at 2+ and shows every baby menu") {
+            let options = DrawOptions(audience: .baby, onlyWhatWeHave: false)
+            return options.babyAge == 2
+                && Menu.candidates(Kitchen(), options).count == Catalog.recipes.filter { $0.audience == .baby }.count
+        }
         expect("draw avoids the previous pick") {
             let two = Array(Catalog.recipes.prefix(2))
             return (0..<20).allSatisfy { _ in Menu.pick(two, previous: "f1")?.id == "f2" } && Menu.pick([], previous: nil) == nil
