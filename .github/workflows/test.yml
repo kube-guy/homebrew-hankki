@@ -16,6 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: swift --version
+      - name: Recipe catalog is valid and CatalogData.swift is up to date
+        run: python3 scripts/build-catalog.py --check
       - run: swift build -c release --product hankki
       - run: .build/release/hankki --version
       - run: .build/release/hankki --self-check

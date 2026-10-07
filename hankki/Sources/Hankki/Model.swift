@@ -2,7 +2,7 @@ import Foundation
 
 enum Audience: String, Codable, CaseIterable { case family, baby }
 
-struct Recipe: Identifiable, Hashable {
+struct Recipe: Identifiable, Hashable, Codable {
     var id: String
     var name: String
     var audience: Audience
@@ -10,6 +10,8 @@ struct Recipe: Identifiable, Hashable {
     var ageMonths: Int
     var minutes: Int
     var emoji: String
+    /// Catalog.categories 중 하나 (국·찌개, 반찬, 밥·죽·면, 메인 요리, 분식·간식·양식).
+    var category: String
     var ingredients: [String]
     var amounts: [String]
     var steps: [String]
@@ -44,7 +46,7 @@ struct RecipeLink: Hashable, Identifiable {
     var id: URL { url }
 }
 
-struct IngredientGroup: Identifiable, Hashable {
+struct IngredientGroup: Identifiable, Hashable, Codable {
     var name: String
     var items: [String]
     var id: String { name }
@@ -103,6 +105,21 @@ enum Menu {
             (options.audience != .baby || $0.ageYears <= options.babyAge) &&
             !isExcluded($0, by: options.excluded) &&
             (!options.onlyWhatWeHave || kitchen.missing($0).isEmpty)
+        }
+    }
+
+    /// 레시피 검색. 띄어쓰기로 나눈 단어가 모두 요리 이름·재료·분류 중 어딘가에 있어야 한다.
+    /// "계란"처럼 별칭으로 적어도 재료 이름(달걀)으로 찾는다.
+    static func search(_ recipes: [Recipe], query: String) -> [Recipe] {
+        let words = query.split(whereSeparator: { $0.isWhitespace || $0 == "," }).map { word -> String in
+            let text = String(word)
+            return PantryLanguage.aliases[text] ?? text
+        }
+        guard !words.isEmpty else { return recipes }
+        return recipes.filter { recipe in
+            words.allSatisfy { word in
+                recipe.name.contains(word) || recipe.category.contains(word) || recipe.ingredients.contains { $0.contains(word) }
+            }
         }
     }
 

@@ -510,22 +510,31 @@ struct ShoppingPanel: View {
 
 struct RecipeCollection: View {
     enum Filter: String, CaseIterable { case all = "모두", family = "가족 메뉴", baby = "아기 메뉴", saved = "찜한 메뉴" }
+    static let allCategories = "전체"
+    static let pageSize = 60
     @EnvironmentObject var store: Store
     @Binding var detail: Recipe?
     @State private var filter = Filter.all
+    @State private var category = RecipeCollection.allCategories
+    @State private var query = ""
+    @State private var shown = RecipeCollection.pageSize
 
     private var recipes: [Recipe] {
-        Catalog.recipes.filter {
+        let listed = Catalog.recipes.filter {
+            let audienceMatches: Bool
             switch filter {
-            case .all: return true
-            case .family: return $0.audience == .family
-            case .baby: return $0.audience == .baby
-            case .saved: return store.kitchen.favorites.contains($0.id)
+            case .all: audienceMatches = true
+            case .family: audienceMatches = $0.audience == .family
+            case .baby: audienceMatches = $0.audience == .baby
+            case .saved: audienceMatches = store.kitchen.favorites.contains($0.id)
             }
+            return audienceMatches && (category == RecipeCollection.allCategories || $0.category == category)
         }
+        return Menu.search(listed, query: query)
     }
 
     var body: some View {
+        let found = recipes
         VStack(alignment: .leading, spacing: 18) {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 6) {
@@ -539,17 +548,45 @@ struct RecipeCollection: View {
                 }
                 .pickerStyle(.segmented).labelsHidden().fixedSize()
             }
-            if recipes.isEmpty {
-                Text("아직 찜한 메뉴가 없어요. 마음에 드는 레시피의 ♡를 눌러 주세요.")
+            HStack(spacing: 12) {
+                HStack {
+                    Image(systemName: "magnifyingglass").foregroundStyle(Palette.muted)
+                    TextField("요리 이름이나 재료로 검색 (예: 두부 애호박, 닭고기)", text: $query).textFieldStyle(.plain)
+                    if !query.isEmpty {
+                        Button { query = "" } label: { Image(systemName: "xmark.circle.fill") }
+                            .buttonStyle(.plain).foregroundStyle(Palette.muted).help("검색어 지우기")
+                    }
+                }
+                .padding(.horizontal, 12).padding(.vertical, 9)
+                .background(Color.white, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Palette.line))
+                Picker("분류", selection: $category) {
+                    Text(RecipeCollection.allCategories).tag(RecipeCollection.allCategories)
+                    ForEach(Catalog.categories, id: \.self) { Text($0).tag($0) }
+                }
+                .fixedSize()
+                Text("\(found.count)가지").font(.callout).foregroundStyle(Palette.muted).monospacedDigit()
+            }
+            if found.isEmpty {
+                Text(filter == .saved && query.isEmpty && category == RecipeCollection.allCategories
+                     ? "아직 찜한 메뉴가 없어요. 마음에 드는 레시피의 ♡를 눌러 주세요."
+                     : "찾는 레시피가 없어요. 검색어나 분류를 바꿔 보세요.")
                     .foregroundStyle(Palette.muted).frame(maxWidth: .infinity).padding(35)
                     .background(Color(red: 0.94, green: 0.95, blue: 0.91), in: RoundedRectangle(cornerRadius: 15))
             } else {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 4), spacing: 16) {
-                    ForEach(recipes) { card($0) }
+                    ForEach(found.prefix(shown)) { card($0) }
+                }
+                if found.count > shown {
+                    Button("레시피 더 보기 (\(found.count - shown)가지 남음)") { shown += RecipeCollection.pageSize }
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
         .padding(.top, 14)
+        .onChange(of: filter) { _, _ in shown = RecipeCollection.pageSize }
+        .onChange(of: category) { _, _ in shown = RecipeCollection.pageSize }
+        .onChange(of: query) { _, _ in shown = RecipeCollection.pageSize }
     }
 
     private func card(_ recipe: Recipe) -> some View {
@@ -561,7 +598,7 @@ struct RecipeCollection: View {
                     Text(recipe.emoji).font(.system(size: 34)).frame(width: 66, height: 66)
                         .background(Color(red: 0.96, green: 0.94, blue: 0.9), in: Circle())
                         .padding(.bottom, 8)
-                    Text(recipe.audience == .baby ? "아기 메뉴 · 만 \(recipe.ageYears)세부터" : "가족 메뉴")
+                    Text((recipe.audience == .baby ? "아기 메뉴" : "가족 메뉴") + " · " + recipe.category)
                         .font(.caption2).foregroundStyle(Color(red: 0.55, green: 0.38, blue: 0.27))
                     Text(recipe.name).font(.system(size: 16, weight: .bold)).lineLimit(2, reservesSpace: true)
                     Text("\(recipe.minutes)분 · \(recipe.ingredients.count)가지 재료").font(.caption).foregroundStyle(Palette.muted)

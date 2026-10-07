@@ -81,7 +81,8 @@ import Foundation
         // 메뉴 고르기
         let kitchen = Kitchen(pantry: ["밥", "당근", "양파"], staples: ["달걀", "식용유"])
         expect("only recipes we can make") {
-            Menu.candidates(kitchen, DrawOptions()).map(\.id) == ["f1"]
+            let found = Menu.candidates(kitchen, DrawOptions())
+            return found.contains { $0.id == "f1" } && found.allSatisfy { kitchen.missing($0).isEmpty && $0.audience == .family }
         }
         expect("baby age and exclusions") {
             var options = DrawOptions(audience: .baby, babyAge: 0, onlyWhatWeHave: false)
@@ -108,6 +109,20 @@ import Foundation
             }
                 && Catalog.recipes.first { $0.id == "b29" }?.searchTerm == "유아식 소고기 장조림"
                 && Catalog.recipes.first { $0.id == "f52" }?.searchTerm == "소고기 덮밥"
+        }
+        expect("catalog loads 500+ recipes in known categories") {
+            Catalog.recipes.count >= 500 && Catalog.recipes.count == CatalogData.recipeCount
+                && Catalog.recipes.allSatisfy { Catalog.categories.contains($0.category) }
+        }
+        expect("recipe search by name, ingredients and aliases") {
+            let all = Catalog.recipes
+            let byName = Menu.search(all, query: "김치볶음밥").map(\.id)
+            let byIngredients = Menu.search(all, query: "두부 애호박")
+            let byAlias = Menu.search(all, query: "계란")
+            return byName.contains("f12") && byIngredients.contains { $0.id == "f13" }
+                && byIngredients.allSatisfy { $0.ingredients.contains("두부") || $0.name.contains("두부") }
+                && !byAlias.isEmpty && byAlias.allSatisfy { $0.name.contains("달걀") || $0.ingredients.contains("달걀") }
+                && Menu.search(all, query: "없는재료").isEmpty && Menu.search(all, query: "  ").count == all.count
         }
         expect("draw avoids the previous pick") {
             let two = Array(Catalog.recipes.prefix(2))
