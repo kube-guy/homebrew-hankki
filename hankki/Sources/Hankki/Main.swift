@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 enum Hankki {
-    static let version = "0.3.1"
+    static let version = "0.3.2"
     static let help = """
     한 끼 꾸러미 \(version)
 
