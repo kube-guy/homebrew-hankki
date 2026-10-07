@@ -1,9 +1,9 @@
 class Hankki < Formula
   desc "Choose family and baby meals from ingredients in your pantry"
   homepage "https://github.com/kube-guy/homebrew-hankki"
-  url "https://github.com/kube-guy/homebrew-hankki/archive/9af1ef32b672694946088a6eb0fe6358f841b31e.tar.gz"
-  version "0.3.2"
-  sha256 "8f5fa321345744ab91a2a496d1a71b82a59ee8aaceaca2acbb49df295b91073a"
+  url "https://github.com/kube-guy/homebrew-hankki/archive/1a1a6098f372c18eea1cf29809c5edb27b874814.tar.gz"
+  version "0.3.3"
+  sha256 "39f4bec93f8fa2c08078fc4d6b8a89af62e39cac8af42ff75e1380c1918d93b4"
 
   # Command Line Tools 의 Swift 로 빌드된다. Xcode 전체를 요구하지 않는다.
   depends_on macos: :sonoma
